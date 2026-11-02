@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--c1:#092328;--c2:#12544F;--c3:#2A835F;--c4:#8BBB92;--ry:14deg;--spring:cubic-bezier(.34,1.45,.5,1);--mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--c1);color:var(--c4);font-family:var(--mono)}
+
+/* slow drifting background */
+.bg{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.bg i{position:absolute;border-radius:50%;filter:blur(90px);will-change:transform}
+.bg i:nth-child(1){width:55vw;height:55vw;left:-12vw;top:-18vw;background:var(--c2);opacity:.6;animation:d1 40s ease-in-out infinite alternate}
+.bg i:nth-child(2){width:48vw;height:48vw;right:-10vw;bottom:-16vw;background:var(--c3);opacity:.38;animation:d2 52s ease-in-out infinite alternate}
+.bg i:nth-child(3){width:34vw;height:34vw;left:38vw;top:28vh;background:var(--c4);opacity:.1;animation:d3 64s ease-in-out infinite alternate}
+@keyframes d1{to{transform:translate(22vw,18vh) scale(1.2)}}
+@keyframes d2{to{transform:translate(-20vw,-16vh) scale(1.15)}}
+@keyframes d3{to{transform:translate(-24vw,-12vh) scale(1.3)}}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
+
+/* click-me screen */
+.gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;width:100%;padding:0;border:0;border-radius:0;background:var(--c1);color:var(--c4);font-size:clamp(18px,3vw,28px);letter-spacing:.14em;cursor:pointer;transition:opacity .7s,visibility .7s}
+.gate.gone{opacity:0;visibility:hidden;pointer-events:none}
+
+/* music button */
+.snd{position:fixed;z-index:2;top:calc(16px + env(safe-area-inset-top,0px));right:16px;width:40px;height:40px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(18,84,79,.5);color:var(--c4);cursor:pointer;transition:background .25s,transform .35s var(--spring)}
+@media(hover:hover){.snd:hover{background:rgba(42,131,95,.6)}}
+.snd:active{transform:scale(.92)}
+.snd svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.snd .s-off{display:none}.snd.muted .s-on{display:none}.snd.muted .s-off{display:block}
+
+main{position:relative;z-index:1;height:100vh;height:100dvh;display:flex;align-items:center;justify-content:space-between;padding:0 9vw 0 8vw;transition:filter .5s,transform .6s var(--spring)}
+body.modal main{filter:brightness(.4) blur(2px);transform:scale(.985)}
+
+/* profile */
+.me{display:flex;align-items:center;gap:20px;position:relative;z-index:2}
+.pfp{position:relative;flex:none;width:104px;height:104px;border:0;border-radius:50%;padding:4px;cursor:pointer;background:conic-gradient(var(--c3),var(--c4),var(--c2),var(--c3));transition:transform .45s var(--spring)}
+@media(hover:hover){.pfp:hover{transform:scale(1.07) rotate(-4deg)}}
+.pfp:active{transform:scale(.94)}
+.av{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;background:var(--c2)}
+.dot,.stat{--sc:#4a6a6a}
+[data-s=online]{--sc:var(--c4)}[data-s=idle]{--sc:#d9b44a}[data-s=dnd]{--sc:#d9604a}
+.dot{position:absolute;right:2px;bottom:2px;width:22px;height:22px;border-radius:50%;border:4px solid var(--c1);background:var(--sc)}
+h1{font-size:clamp(34px,4.4vw,60px);line-height:1;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--c4)}
+.hd{display:block;margin-top:10px;font-size:12px;letter-spacing:.12em;color:var(--c3);overflow-wrap:anywhere}
+
+/* 3D cards */
+.stage{--W:min(52vw,125vh);--s:calc(var(--W)/2 - 41vw);--R:calc(var(--W)*1.15);position:relative;width:var(--W);aspect-ratio:5/3;perspective:1500px;touch-action:none;transition:perspective-origin .9s cubic-bezier(.2,.8,.2,1)}
+.card{position:absolute;inset:0;border-radius:28px;overflow:hidden;cursor:pointer;background:var(--c2);border:1px solid rgba(139,187,146,.22);box-shadow:0 40px 80px -24px rgba(0,0,0,.65);transform:translate3d(0,calc(var(--d,0)*103%),calc(var(--a,0)*-140px)) rotateY(var(--ry)) rotateX(calc(var(--d,0)*-4deg)) scale(1);transition:transform .9s cubic-bezier(.2,.8,.2,1),opacity .6s,filter .6s;will-change:transform}
+.card.on{cursor:default}
+.ring{position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d}
+.card.ghost{opacity:0;pointer-events:none}
+body.spin .card{transition:opacity .6s,filter .6s}
+.card img{display:block;width:100%;height:100%;object-fit:cover;user-select:none}
+.card::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(155deg,rgba(18,84,79,.32),transparent 45%),linear-gradient(0deg,rgba(9,35,40,.7),transparent 45%)}
+.tag{position:absolute;z-index:1;top:18px;right:24px;font-size:10px;letter-spacing:.22em;color:var(--c4)}
+
+.ticks{position:fixed;right:20px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;z-index:2}
+.ticks button{width:16px;height:16px;padding:6.5px 0;border:0;background:var(--c4) content-box;opacity:.3;cursor:pointer;transition:width .45s var(--spring),opacity .3s}
+.ticks button.on{width:28px;opacity:1}
+
+/* dynamic island */
+.scrim{position:fixed;inset:0;z-index:10;background:rgba(3,12,14,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .4s}
+body.modal .scrim{opacity:1;pointer-events:auto}
+.island{position:fixed;z-index:20;top:50%;left:50%;translate:-50% -50%;width:126px;height:36px;border-radius:22px;overflow:hidden;background:#04151a;border:1px solid rgba(139,187,146,.2);box-shadow:0 30px 80px -10px rgba(0,0,0,.75),0 0 0 1px rgba(0,0,0,.6),0 0 60px -8px rgba(42,131,95,.5);opacity:0;transition:width .65s var(--spring),height .65s var(--spring),border-radius .65s var(--spring),opacity .2s}
+.island.open{opacity:1;width:min(440px,calc(100vw - 24px));height:min(480px,calc(100dvh - 24px));border-radius:46px}
+.in{position:relative;width:min(440px,calc(100vw - 24px));height:min(480px,calc(100dvh - 24px));padding:32px 26px 24px;overflow-y:auto;scrollbar-width:none;text-align:center}
+.in>*{opacity:0;transform:translateY(10px);transition:opacity .3s,transform .45s var(--spring)}
+.open .in>*{opacity:1;transform:none}
+.open .in>:nth-child(1){transition-delay:.12s}.open .in>:nth-child(2){transition-delay:.18s}.open .in>:nth-child(3){transition-delay:.26s}.open .in>:nth-child(4){transition-delay:.32s}
+.x{position:absolute;top:20px;right:22px;width:30px;height:30px;border:0;border-radius:50%;background:rgba(139,187,146,.12);cursor:pointer;font-size:18px;line-height:1;transition:background .2s}
+.x:hover{background:rgba(139,187,146,.28)}
+.pic{position:relative;width:96px;height:96px;margin:0 auto 18px}
+.pic .av{width:96px;height:96px}
+.pic .dot{right:0;bottom:0;width:28px;height:28px;border:5px solid #04151a}
+.deco{position:absolute;left:50%;top:50%;width:120%;height:120%;translate:-50% -50%;pointer-events:none}
+.who h2{font-size:26px;line-height:1.1;color:#e6f2e8;letter-spacing:.02em;overflow-wrap:anywhere}
+.un{margin-top:6px;font-size:12px;letter-spacing:.12em;color:var(--c3);overflow-wrap:anywhere}
+.stat{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:7px 14px;border-radius:999px;background:rgba(18,84,79,.45);font-size:12px;color:#e6f2e8}
+.stat i{width:9px;height:9px;border-radius:50%;background:var(--sc)}
+.cs{margin-top:10px;font-size:13px;color:var(--c4);overflow-wrap:anywhere}
+.cs:empty{display:none}
+.who+.row{margin-top:22px}
+.row{display:flex;align-items:center;gap:14px;padding:12px 14px;text-align:left;margin-top:8px;border-radius:20px;text-decoration:none;color:inherit;background:rgba(18,84,79,.35);transition:background .25s,transform .35s var(--spring)}
+.row:hover{background:rgba(42,131,95,.5);transform:scale(1.02)}
+.row i{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:12px;background:var(--c1);color:var(--c4)}
+.row svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.row span{flex:1;min-width:0}
+.row b{display:block;font-size:14px;color:#e6f2e8}
+.row small{display:block;font-size:11px;color:var(--c4);opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row em{font-style:normal;color:var(--c4)}
+
+/* side modals (wide desktop): Spotify on the left, Instagram on the right */
+.island.side{display:none;--sw:clamp(220px,27vw,520px);--sh:min(calc(var(--sw)*1.12),78dvh);--dx:max(31.5vw,calc(var(--sw)*.5 + 250px));transform:translate(0,0) perspective(1000px) rotateY(0deg) rotateZ(0deg);transition:width .65s var(--spring),height .65s var(--spring),border-radius .65s var(--spring),opacity .2s,transform .9s var(--spring)}
+.island.side.open{width:var(--sw);height:var(--sh);border-radius:40px;transform:translate(var(--ix),var(--iy)) perspective(1000px) rotateY(var(--iry)) rotateZ(var(--irz));transition-delay:.08s}
+.island.l{--ix:calc(var(--dx)*-1);--iy:70px;--iry:24deg;--irz:-12deg}
+.island.r{--ix:var(--dx);--iy:40px;--iry:-32deg;--irz:8deg}
+.island.side .in{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:var(--sw);height:var(--sh);padding:24px;border-radius:inherit;color:inherit;text-decoration:none}
+.island.side .in:focus-visible{outline-offset:-8px}
+.sico{display:grid;place-items:center;width:clamp(64px,calc(var(--sw)*.2),104px);height:clamp(64px,calc(var(--sw)*.2),104px);border-radius:30%;background:var(--c1);color:var(--c4)}
+.sico svg{width:52%;height:52%;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
+.stt{font-size:clamp(22px,calc(var(--sw)*.065),34px);line-height:1.1;font-weight:700;letter-spacing:.02em;color:#e6f2e8}
+.sub{font-size:clamp(11px,calc(var(--sw)*.026),14px);letter-spacing:.08em;color:rgba(139,187,146,.8);overflow-wrap:anywhere}
+.go{margin-top:6px;padding:8px 18px;border-radius:999px;background:rgba(18,84,79,.45);font-size:clamp(12px,calc(var(--sw)*.026),14px);color:#e6f2e8;transition:opacity .3s,transform .45s var(--spring),background .25s}
+@media(hover:hover){.island.side .in:hover .go{background:rgba(42,131,95,.6)}}
+@media(min-width:1200px){
+  .island.side{display:block}
+  #island .row{display:none}
+  #island.open{height:min(380px,calc(100dvh - 24px))}
+  #island .in{display:flex;flex-direction:column;height:min(380px,calc(100dvh - 24px))}
+  #island .who{margin:auto 0}
+}
+@media(min-width:801px){
+  body.modal .stage{perspective-origin:calc(50% + var(--s)) 135%;z-index:3;transform-style:preserve-3d}
+  body.modal .card{
+    --ang:calc(var(--m,0)*40deg + var(--rot,0deg));
+    opacity:1!important;filter:none!important;-webkit-backface-visibility:hidden;backface-visibility:hidden;
+    transform:translate3d(calc(var(--s) + var(--R)*sin(var(--ang))),-6%,calc(var(--R)*(cos(var(--ang)) - 1))) rotateY(var(--ang)) rotateX(-4deg) scale(.82);
+  }
+  body.modal .card.far{opacity:0!important}
+}
+@media(max-width:800px){
+  main{flex-direction:column;justify-content:center;gap:28px;overflow:hidden;padding:env(safe-area-inset-top,0px) 6vw calc(36px + env(safe-area-inset-bottom,0px))}
+  .me{gap:14px;max-width:100%}.me>div{min-width:0}
+  .pfp{width:84px;height:84px}
+  h1{font-size:clamp(26px,8vw,40px);overflow-wrap:anywhere}
+  .stage{width:min(84vw,calc(52vh*.8));width:min(84vw,calc(52dvh*.8));aspect-ratio:4/5}
+  .card{border-radius:24px;transform:translate3d(calc(var(--d,0)*103%),0,calc(var(--a,0)*-140px)) rotateY(calc(var(--d,0)*8deg))}
+  .ticks{top:auto;right:auto;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);flex-direction:row;gap:4px}
+  .ticks button{height:24px;padding:10.5px 0}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<main>
+  <div class="me">
+    <button class="pfp" id="pfp" aria-label="Open socials" aria-haspopup="dialog">
+      <img class="av" alt="Profile picture"><span class="dot" data-s="offline"></span>
+    </button>
+    <div>
+      <h1 id="name">Member</h1>
+      <small class="hd" id="handle"></small>
+    </div>
+  </div>
+  <div class="stage" id="stage" aria-live="polite"></div>
+</main>
+
+<nav class="ticks" id="ticks" aria-label="Photos"></nav>
+<button class="gate" id="gate">click me</button>
+<audio id="bgm" src="https://file.garden/am9m147l3hw3nqT1/Streets%20of%20Manila%20-%20Uncle%20Dags%20(Official%20Music%20Video).mp3" loop preload="auto"></audio>
+<button class="snd muted" id="snd" aria-label="Play music" aria-pressed="false">
+  <svg class="s-on" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.7 7.7 0 0 1 0 11"/></svg>
+  <svg class="s-off" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>
+</button>
+<div class="scrim" id="scrim"></div>
+
+<div class="island" id="island" role="dialog" aria-label="Socials" inert>
+  <div class="in">
+    <button class="x" id="close" aria-label="Close">&times;</button>
+    <div class="who">
+      <div class="pic">
+        <img class="av" alt="Profile picture">
+        <img class="deco" id="deco" alt="" hidden>
+        <span class="dot" data-s="offline"></span>
+      </div>
+      <h2 id="mname">Member</h2>
+      <div class="un" id="munder"></div>
+      <div class="stat" data-s="offline"><i></i><span id="slabel">Offline</span></div>
+      <div class="cs" id="cs"></div>
+    </div>
+    <a class="row" href="https://open.spotify.com/user/31eyihdfzu7h5cxyvpwpayykfpli?si=KX6KAQtDR-eWNubEbrNFPQ&amp;utm_source=copy-link" target="_blank" rel="noopener noreferrer">
+      <i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M7 9.4c3.6-1 7.4-.7 10.4 1.1M7.6 12.7c3-.8 6-.5 8.6 1M8.2 15.7c2.4-.6 4.6-.4 6.6.7"/></svg></i>
+      <span><b>Spotify</b><small>Listen to my playlists</small></span><em>&#8599;</em>
+    </a>
+    <a class="row" href="https://www.instagram.com/afeelingsogooduneverforget?xtok=MWF6dGNrMGpodnNlZA==" target="_blank" rel="noopener noreferrer">
+      <i><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".6"/></svg></i>
+      <span><b>Instagram</b><small>@afeelingsogooduneverforget</small></span><em>&#8599;</em>
+    </a>
+  </div>
+</div>
+
+<div class="island side l" role="group" aria-label="Spotify" inert>
+  <a class="in" href="https://open.spotify.com/user/31eyihdfzu7h5cxyvpwpayykfpli?si=KX6KAQtDR-eWNubEbrNFPQ&amp;utm_source=copy-link" target="_blank" rel="noopener noreferrer">
+    <i class="sico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M7 9.4c3.6-1 7.4-.7 10.4 1.1M7.6 12.7c3-.8 6-.5 8.6 1M8.2 15.7c2.4-.6 4.6-.4 6.6.7"/></svg></i>
+    <b class="stt">Spotify</b>
+    <small class="sub">Listen to my playlists</small>
+    <span class="go">Open &#8599;</span>
+  </a>
+</div>
+<div class="island side r" role="group" aria-label="Instagram" inert>
+  <a class="in" href="https://www.instagram.com/afeelingsogooduneverforget?xtok=MWF6dGNrMGpodnNlZA==" target="_blank" rel="noopener noreferrer">
+    <i class="sico"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".6"/></svg></i>
+    <b class="stt">Instagram</b>
+    <small class="sub">@afeelingsogooduneverforget</small>
+    <span class="go">Open &#8599;</span>
+  </a>
+</div>
+
+<script>
+// ---- Edit these ----
+const CONFIG = {
+  discordId: "1459878964838531208",
+  images: [
+    "https://file.garden/am9m147l3hw3nqT1/b30b4cb7af5f6ac857821079ea11d893.jpg",
+    "https://file.garden/am9m147l3hw3nqT1/272133f4650479e605ad1f72285865e1.jpg",
+    "https://file.garden/am9m147l3hw3nqT1/aeefccd20b710256bf2df7e7e3ec6262.jpg"
+  ]
+};
+
+const $ = s => document.querySelector(s);
+const ID = CONFIG.discordId;
+
+/* ---- Discord profile (needs you in discord.gg/lanyard so the API can see you) ---- */
+const setAv = src => document.querySelectorAll(".av").forEach(i => i.src = src);
+setAv(`https://cdn.discordapp.com/embed/avatars/${Number((BigInt(ID) >> 22n) % 6n)}.png`);
+$("#handle").textContent = $("#munder").textContent = "id " + ID;
+const LABELS = { online: "Online", idle: "Idle", dnd: "Do not disturb", offline: "Offline" };
+fetch(`https://api.lanyard.rest/v1/users/${ID}`)
+  .then(r => r.json())
+  .then(({ success, data }) => {
+    if (!success) return;
+    const u = data.discord_user, n = u.global_name || u.username;
+    if (u.avatar) setAv(`https://cdn.discordapp.com/avatars/${ID}/${u.avatar}.${u.avatar.startsWith("a_") ? "gif" : "png"}?size=256`);
+    $("#name").textContent = $("#mname").textContent = n;
+    $("#handle").textContent = $("#munder").textContent = "@" + u.username;
+    document.querySelectorAll("[data-s]").forEach(e => e.dataset.s = data.discord_status);
+    $("#slabel").textContent = LABELS[data.discord_status] || "Offline";
+    const dec = u.avatar_decoration_data;
+    if (dec) { $("#deco").src = `https://cdn.discordapp.com/avatar-decoration-presets/${dec.asset}.png?size=240&passthrough=true`; $("#deco").hidden = false; }
+    const cs = (data.activities || []).find(a => a.type === 4);
+    if (cs) $("#cs").textContent = [cs.emoji && !cs.emoji.id ? cs.emoji.name : "", cs.state].filter(Boolean).join(" ");
+    document.title = n;
+  })
+  .catch(() => {});
+
+/* ---- 3D card stack ---- */
+const stage = $("#stage"), ticks = $("#ticks"), imgs = CONFIG.images;
+let cur = 0;
+imgs.forEach((src, i) => {
+  const c = document.createElement("div");
+  c.className = "card";
+  const m = i - Math.floor((imgs.length - 1) / 2);
+  c.style.setProperty("--m", m);
+  c.classList.toggle("far", Math.abs(m) > 4);
+  c.innerHTML = `<img src="${src}" alt="Photo ${i + 1}" draggable="false"><span class="tag">IMG / ${String(i + 1).padStart(2, "0")}</span>`;
+  c.onclick = () => go(i);
+  stage.append(c);
+  const t = document.createElement("button");
+  t.setAttribute("aria-label", "Photo " + (i + 1));
+  t.onclick = () => go(i);
+  ticks.append(t);
+});
+// extra copies so the ring in the popup view is full (9 slots, 40deg apart)
+const mid = Math.floor((imgs.length - 1) / 2), ring = document.createElement("div");
+ring.className = "ring"; stage.append(ring);
+for (let k = -4; k <= 4; k++) {
+  if (k + mid >= 0 && k + mid < imgs.length) continue;
+  const i = ((k + mid) % imgs.length + imgs.length) % imgs.length, g = document.createElement("div");
+  g.className = "card ghost"; g.setAttribute("aria-hidden", "true");
+  g.style.setProperty("--m", k);
+  g.innerHTML = `<img src="${imgs[i]}" alt="" draggable="false"><span class="tag">IMG / ${String(i + 1).padStart(2, "0")}</span>`;
+  ring.append(g);
+}
+function render() {
+  [...stage.querySelectorAll(":scope>.card")].forEach((c, i) => {
+    const d = i - cur, a = Math.abs(d);
+    c.style.setProperty("--d", d); c.style.setProperty("--a", a);
+    c.style.opacity = a > 1 ? 0 : a ? 0.4 : 1;
+    c.style.filter = a ? "brightness(.55) saturate(.8)" : "none";
+    c.style.pointerEvents = a > 1 ? "none" : "auto";
+    c.classList.toggle("on", !a);
+  });
+  [...ticks.children].forEach((t, i) => t.classList.toggle("on", i === cur));
+}
+function go(i) { cur = Math.max(0, Math.min(imgs.length - 1, i)); render(); }
+render();
+
+let lock = 0, x0 = 0, y0 = 0;
+const mob = matchMedia("(max-width:800px)");
+const modalOpen = () => document.body.classList.contains("modal");
+addEventListener("wheel", e => {
+  if (modalOpen() || Date.now() < lock || Math.abs(e.deltaY) < 12) return;
+  lock = Date.now() + 650;
+  go(cur + (e.deltaY > 0 ? 1 : -1));
+}, { passive: true });
+addEventListener("touchstart", e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+addEventListener("touchend", e => {
+  const t = e.changedTouches[0], dx = x0 - t.clientX, dy = y0 - t.clientY;
+  const [m, o] = mob.matches ? [dx, dy] : [dy, dx];
+  if (!modalOpen() && Math.abs(m) > 40 && Math.abs(m) > Math.abs(o)) go(cur + (m > 0 ? 1 : -1));
+});
+
+/* ---- dynamic island ---- */
+const isls = document.querySelectorAll(".island"), pfp = $("#pfp");
+let rot = 0, raf = 0, t0 = 0, spinT = 0;
+function tick(t) {
+  rot = (rot - Math.min(t - t0, 250) * 0.012) % 360; t0 = t;
+  stage.style.setProperty("--rot", rot + "deg");
+  raf = requestAnimationFrame(tick);
+}
+function startSpin() { document.body.classList.add("spin"); t0 = performance.now(); raf = requestAnimationFrame(tick); }
+function stopSpin() { clearTimeout(spinT); cancelAnimationFrame(raf); document.body.classList.remove("spin"); }
+function toggle(open) {
+  stopSpin();
+  if (open) {
+    rot = 0; stage.style.setProperty("--rot", "0deg");
+    if (!mob.matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) spinT = setTimeout(startSpin, 950);
+  }
+  document.body.classList.toggle("modal", open);
+  isls.forEach(e => { e.classList.toggle("open", open); e.inert = !open; });
+  (open ? $("#close") : pfp).focus({ preventScroll: true });
+}
+pfp.onclick = () => toggle(true);
+$("#close").onclick = $("#scrim").onclick = () => toggle(false);
+
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && modalOpen()) return toggle(false);
+  if (modalOpen()) return;
+  if (["ArrowDown", "ArrowRight", "PageDown"].includes(e.key)) go(cur + 1);
+  if (["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key)) go(cur - 1);
+});
+
+/* ---- background music ---- */
+// The "click me" screen gives the browser the interaction it needs to allow sound.
+const bgm = $("#bgm"), snd = $("#snd");
+bgm.volume = .6;
+const sync = () => {
+  snd.classList.toggle("muted", bgm.paused);
+  snd.setAttribute("aria-pressed", String(!bgm.paused));
+  snd.setAttribute("aria-label", bgm.paused ? "Play music" : "Pause music");
+};
+bgm.addEventListener("play", sync);
+bgm.addEventListener("pause", sync);
+const gate = $("#gate"), behind = document.querySelectorAll("main,.ticks,.snd");
+behind.forEach(e => e.inert = true);
+gate.focus({ preventScroll: true });
+gate.onclick = () => {
+  bgm.play().catch(() => {});
+  behind.forEach(e => e.inert = false);
+  gate.classList.add("gone");
+};
+snd.onclick = () => { bgm.paused ? bgm.play().catch(() => {}) : bgm.pause(); };
+</script>
+</body>
+</html>
