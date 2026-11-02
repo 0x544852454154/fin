@@ -25,10 +25,6 @@ body{background:var(--c1);color:var(--c4);font-family:var(--mono)}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--c4);outline-offset:3px}
 
-/* click-me screen */
-.gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;width:100%;padding:0;border:0;border-radius:0;background:var(--c1);color:var(--c4);font-size:clamp(18px,3vw,28px);letter-spacing:.14em;cursor:pointer;transition:opacity .7s,visibility .7s}
-.gate.gone{opacity:0;visibility:hidden;pointer-events:none}
-
 /* music button */
 .snd{position:fixed;z-index:2;top:calc(16px + env(safe-area-inset-top,0px));right:16px;width:40px;height:40px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(18,84,79,.5);color:var(--c4);cursor:pointer;transition:background .25s,transform .35s var(--spring)}
 @media(hover:hover){.snd:hover{background:rgba(42,131,95,.6)}}
@@ -157,7 +153,6 @@ body.modal .scrim{opacity:1;pointer-events:auto}
 </main>
 
 <nav class="ticks" id="ticks" aria-label="Photos"></nav>
-<button class="gate" id="gate">click me</button>
 <audio id="bgm" src="https://file.garden/am9m147l3hw3nqT1/Streets%20of%20Manila%20-%20Uncle%20Dags%20(Official%20Music%20Video).mp3" loop preload="auto"></audio>
 <button class="snd muted" id="snd" aria-label="Play music" aria-pressed="false">
   <svg class="s-on" viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.7 7.7 0 0 1 0 11"/></svg>
@@ -332,7 +327,8 @@ addEventListener("keydown", e => {
 });
 
 /* ---- background music ---- */
-// The "click me" screen gives the browser the interaction it needs to allow sound.
+// Browsers block sound until the visitor interacts, so we try to autoplay on load
+// and fall back to starting on the first click / tap / key press anywhere on the page.
 const bgm = $("#bgm"), snd = $("#snd");
 bgm.volume = .6;
 const sync = () => {
@@ -342,15 +338,15 @@ const sync = () => {
 };
 bgm.addEventListener("play", sync);
 bgm.addEventListener("pause", sync);
-const gate = $("#gate"), behind = document.querySelectorAll("main,.ticks,.snd");
-behind.forEach(e => e.inert = true);
-gate.focus({ preventScroll: true });
-gate.onclick = () => {
+const firstPlay = e => {
+  if (e.target.closest && e.target.closest("#snd")) return; // the music button handles itself
   bgm.play().catch(() => {});
-  behind.forEach(e => e.inert = false);
-  gate.classList.add("gone");
+  cleanup();
 };
-snd.onclick = () => { bgm.paused ? bgm.play().catch(() => {}) : bgm.pause(); };
+const cleanup = () => ["pointerdown", "keydown"].forEach(t => removeEventListener(t, firstPlay));
+["pointerdown", "keydown"].forEach(t => addEventListener(t, firstPlay));
+bgm.play().then(cleanup).catch(() => {});
+snd.onclick = () => { cleanup(); bgm.paused ? bgm.play().catch(() => {}) : bgm.pause(); };
 </script>
 </body>
 </html>
